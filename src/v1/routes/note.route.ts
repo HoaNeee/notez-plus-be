@@ -8,6 +8,7 @@ router.post("/create", controller.createNewNote);
 router.patch("/update/:note_id", controller.updateNote);
 router.delete("/delete/:note_id", controller.deleteNote);
 router.get("/detail/:note_slug", controller.getDetail);
+router.get("/default", controller.getDefaultNote);
 
 const noteRoute = router;
 export default noteRoute;

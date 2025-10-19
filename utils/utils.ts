@@ -1,5 +1,11 @@
 import { compare, hash } from "bcrypt-ts";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+import { Folder, Note, sequelize } from "../src/v1/models";
+import { startingNoteContent } from "./contants";
+dotenv.config();
+
+export const isProduction = process.env.NODE_ENV === "production";
 
 export const hashPasswordUsingBcrypt = async (password: string) => {
 	const salt = 10;
@@ -36,9 +42,42 @@ export const verifyJWT = (token: string) => {
 			exp: number;
 		};
 	} catch (error) {
-		console.log(error);
-		return null;
+		return error;
 	}
 };
 
 export const user_id_test = 1;
+
+export const createRootFolderAndNoteDefaultForUser = async (
+	user_id: number
+) => {
+	const t = await sequelize.transaction();
+
+	try {
+		const rootFolder = await Folder.create(
+			{
+				user_id,
+				title: "Root",
+				parent_id: null,
+			},
+			{ transaction: t }
+		);
+
+		const note = await Note.create(
+			{
+				user_id,
+				title: "Getting Started",
+				content: startingNoteContent,
+				folder_id: rootFolder.id,
+			},
+			{ transaction: t }
+		);
+
+		await t.commit();
+
+		return { rootFolder, note };
+	} catch (error) {
+		await t.rollback();
+		throw error;
+	}
+};

@@ -5,6 +5,8 @@ import dotenv from "dotenv";
 import ApiError from "./utils/api-error";
 import errorHandler from "./src/v1/middlewares/error-handler";
 import { sequelize } from "./src/v1/models";
+import cookieParser from "cookie-parser";
+
 dotenv.config();
 
 const app = express();
@@ -18,6 +20,7 @@ sequelize
 		console.log("Error connected to database: " + err);
 	});
 
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(

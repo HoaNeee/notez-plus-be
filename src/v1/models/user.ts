@@ -14,10 +14,11 @@ export class UserModel extends Model {
 	public id!: number;
 	public fullname!: string;
 	public email!: string;
-	public pasword!: string;
+	public password!: string;
 	public provider!: string;
 	public avatar!: string;
 	public avatar_id!: number;
+	public status!: "active" | "inactive";
 }
 
 export const UserFactory = (sequelize: Sequelize) => {
@@ -50,6 +51,10 @@ export const UserFactory = (sequelize: Sequelize) => {
 			},
 			avatar_id: {
 				type: DataTypes.STRING(500),
+			},
+			status: {
+				type: DataTypes.ENUM("active", "inactive"),
+				defaultValue: "inactive",
 			},
 		},
 		{

@@ -8,8 +8,8 @@ import uploadRouter from "./upload.route";
 const router = (app: Express) => {
 	const prefix = "/api";
 	app.use(prefix + "/auth", authRoute);
-	app.use(prefix + "/folders", authMiddleware.isAccess, folderRoute);
-	app.use(prefix + "/notes", authMiddleware.isAccess, noteRoute);
+	app.use(prefix + "/folders", authMiddleware.requireAuth, folderRoute);
+	app.use(prefix + "/notes", authMiddleware.requireAuth, noteRoute);
 	// app.use(prefix + "/upload", authMiddleware.isAccess, uploadRouter);
 };
 

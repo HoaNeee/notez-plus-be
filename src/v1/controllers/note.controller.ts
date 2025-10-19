@@ -132,12 +132,15 @@ export const getDetail = async (req: MyRequest, res: Response) => {
 	const existNote = await Note.findOne({
 		where: {
 			slug: note_slug,
-			user_id,
 		},
 	});
 
 	if (!existNote) {
 		throw new ApiError(404, "Note not found");
+	}
+
+	if (existNote.user_id !== user_id) {
+		throw new ApiError(403);
 	}
 
 	let folder_id = existNote.folder_id;
@@ -184,6 +187,30 @@ export const getDetail = async (req: MyRequest, res: Response) => {
 		status: 200,
 		message: "Get note detail success",
 		data: { note: existNote, folders },
+	});
+};
+
+export const getDefaultNote = async (req: MyRequest, res: Response) => {
+	const user_id = req.user_id;
+
+	const notes = await Note.findAll({
+		where: {
+			user_id,
+			deleted: false,
+		},
+		limit: 1,
+		order: [["updatedAt", "DESC"]],
+	});
+
+	if (!notes || notes.length === 0) {
+		throw new ApiError(404, "No notes found");
+	}
+
+	res.status(200).json({
+		success: true,
+		status: 200,
+		message: "Get default note success",
+		data: notes[0],
 	});
 };
 
