@@ -11,27 +11,27 @@ module.exports = {
      *   name: 'John Doe',
      *   isBetaMember: false
      * }], {});
-     *
      */
-
     await queryInterface.bulkInsert(
-      "users",
+      "notification_settings",
       [
         {
           id: 1,
-          fullname: "nguyen hoa",
-          email: "hoa7cvodoi@gmail.com",
-          password: "123456",
-          provider: "account",
+          setting_id: 1,
+          is_activity: false,
+          is_email: false,
+          is_page_update: false,
+          is_workspace: false,
           createdAt: new Date(),
           updatedAt: new Date(),
         },
         {
           id: 2,
-          fullname: "le van c",
-          email: "levanc@gmail.com",
-          password: "123456",
-          provider: "account",
+          setting_id: 2,
+          is_activity: false,
+          is_email: false,
+          is_page_update: false,
+          is_workspace: false,
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -47,6 +47,6 @@ module.exports = {
      * Example:
      * await queryInterface.bulkDelete('People', null, {});
      */
-    await queryInterface.bulkDelete("users", null, {});
+    await queryInterface.bulkDelete("notification_settings", null, {});
   },
 };

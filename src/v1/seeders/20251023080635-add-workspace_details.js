@@ -11,27 +11,39 @@ module.exports = {
      *   name: 'John Doe',
      *   isBetaMember: false
      * }], {});
-     *
      */
-
     await queryInterface.bulkInsert(
-      "users",
+      "workspace_details",
       [
         {
           id: 1,
-          fullname: "nguyen hoa",
-          email: "hoa7cvodoi@gmail.com",
-          password: "123456",
-          provider: "account",
+          workspace_id: 1,
+          member_id: 1,
+          role: "admin",
           createdAt: new Date(),
           updatedAt: new Date(),
         },
         {
           id: 2,
-          fullname: "le van c",
-          email: "levanc@gmail.com",
-          password: "123456",
-          provider: "account",
+          workspace_id: 2,
+          member_id: 1,
+          role: "admin",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: 3,
+          workspace_id: 3,
+          member_id: 2,
+          role: "admin",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: 4,
+          workspace_id: 3,
+          member_id: 1,
+          role: "member",
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -47,6 +59,6 @@ module.exports = {
      * Example:
      * await queryInterface.bulkDelete('People', null, {});
      */
-    await queryInterface.bulkDelete("users", null, {});
+    await queryInterface.bulkDelete("workspace_details", null, {});
   },
 };

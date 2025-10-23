@@ -2,22 +2,34 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable("folders", {
+    await queryInterface.createTable("requests", {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      user_id: {
+      sender_id: {
         type: Sequelize.INTEGER,
         references: { model: "users", key: "id" },
+        allowNull: false,
       },
-      parent_id: {
+      receiver_id: {
         type: Sequelize.INTEGER,
+        references: { model: "users", key: "id" },
+        allowNull: false,
       },
-      title: {
-        type: Sequelize.STRING(255),
+      request_type: {
+        type: Sequelize.STRING(100),
+        allowNull: false,
+      },
+      status: {
+        type: Sequelize.ENUM("pending", "accepted", "rejected"),
+        defaultValue: "pending",
+      },
+      deleted: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: false,
       },
       createdAt: {
         allowNull: false,
@@ -30,6 +42,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable("folders");
+    await queryInterface.dropTable("requests");
   },
 };

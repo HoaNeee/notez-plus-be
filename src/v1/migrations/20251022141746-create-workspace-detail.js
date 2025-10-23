@@ -2,22 +2,26 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable("folders", {
+    await queryInterface.createTable("workspace_details", {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      user_id: {
+      workspace_id: {
+        type: Sequelize.INTEGER,
+        references: { model: "workspaces", key: "id" },
+        allowNull: false,
+      },
+      member_id: {
         type: Sequelize.INTEGER,
         references: { model: "users", key: "id" },
+        allowNull: false,
       },
-      parent_id: {
-        type: Sequelize.INTEGER,
-      },
-      title: {
-        type: Sequelize.STRING(255),
+      role: {
+        type: Sequelize.ENUM("admin", "member"),
+        defaultValue: "member",
       },
       createdAt: {
         allowNull: false,
@@ -30,6 +34,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable("folders");
+    await queryInterface.dropTable("workspace_details");
   },
 };

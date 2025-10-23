@@ -2,7 +2,7 @@
 
 import { DataTypes, Model, Sequelize } from "sequelize";
 
-export class FolderModel extends Model {
+export class WorkspaceModel extends Model {
   /**
    * Helper method for defining associations.
    * This method is not a part of Sequelize lifecycle.
@@ -12,17 +12,16 @@ export class FolderModel extends Model {
     // define association here
   }
   public id!: number;
-  public user_id!: number;
-  public parent_id!: number;
-  public workspace_id!: number;
+  public owner_id!: number;
   public title!: string;
-  public is_in_teamspace!: boolean;
+  public icon_url!: string;
+  public icon_id!: number;
   public deleted!: boolean;
   public deletedAt!: string;
 }
 
-export const FolderFactory = (sequelize: Sequelize) => {
-  FolderModel.init(
+export const WorkspaceFactory = (sequelize: Sequelize) => {
+  WorkspaceModel.init(
     {
       id: {
         type: DataTypes.INTEGER,
@@ -30,23 +29,20 @@ export const FolderFactory = (sequelize: Sequelize) => {
         autoIncrement: true,
         allowNull: false,
       },
-      user_id: {
+      owner_id: {
         type: DataTypes.INTEGER,
         references: { model: "users", key: "id" },
-      },
-      parent_id: {
-        type: DataTypes.INTEGER,
-      },
-      workspace_id: {
-        type: DataTypes.INTEGER,
-        references: { model: "workspaces", key: "id" },
+        allowNull: false,
       },
       title: {
         type: DataTypes.STRING(255),
+        allowNull: false,
       },
-      is_in_teamspace: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false,
+      icon_url: {
+        type: DataTypes.STRING(500),
+      },
+      icon_id: {
+        type: DataTypes.INTEGER,
       },
       deleted: {
         type: DataTypes.BOOLEAN,
@@ -59,11 +55,10 @@ export const FolderFactory = (sequelize: Sequelize) => {
     },
     {
       sequelize,
-      modelName: "Folder",
-      tableName: "folders",
+      modelName: "Workspace",
+      tableName: "workspaces",
     }
   );
-  return FolderModel;
-};
 
-// model/index.ts
+  return WorkspaceModel;
+};

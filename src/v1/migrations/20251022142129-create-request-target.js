@@ -2,22 +2,28 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable("folders", {
+    await queryInterface.createTable("request_targets", {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      user_id: {
+      request_id: {
         type: Sequelize.INTEGER,
-        references: { model: "users", key: "id" },
+        references: { model: "requests", key: "id" },
+        allowNull: false,
       },
-      parent_id: {
+      ref_type: {
+        type: Sequelize.STRING(100),
+        allowNull: false,
+      },
+      ref_id: {
         type: Sequelize.INTEGER,
+        allowNull: false,
       },
-      title: {
-        type: Sequelize.STRING(255),
+      message: {
+        type: Sequelize.TEXT("long"),
       },
       createdAt: {
         allowNull: false,
@@ -30,6 +36,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable("folders");
+    await queryInterface.dropTable("request_targets");
   },
 };

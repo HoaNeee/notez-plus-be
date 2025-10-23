@@ -11,27 +11,29 @@ module.exports = {
      *   name: 'John Doe',
      *   isBetaMember: false
      * }], {});
-     *
      */
-
     await queryInterface.bulkInsert(
-      "users",
+      "editor_settings",
       [
         {
           id: 1,
-          fullname: "nguyen hoa",
-          email: "hoa7cvodoi@gmail.com",
-          password: "123456",
-          provider: "account",
+          setting_id: 1,
+          is_auto_save: true,
+          fontStyle: "Tahoma",
+          tabSize: "4",
+          is_code_highlighting: true,
+          is_auto_wrap_code: false,
           createdAt: new Date(),
           updatedAt: new Date(),
         },
         {
           id: 2,
-          fullname: "le van c",
-          email: "levanc@gmail.com",
-          password: "123456",
-          provider: "account",
+          setting_id: 2,
+          is_auto_save: true,
+          fontStyle: "Tahoma",
+          tabSize: "4",
+          is_code_highlighting: true,
+          is_auto_wrap_code: false,
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -47,6 +49,6 @@ module.exports = {
      * Example:
      * await queryInterface.bulkDelete('People', null, {});
      */
-    await queryInterface.bulkDelete("users", null, {});
+    await queryInterface.bulkDelete("editor_settings", null, {});
   },
 };

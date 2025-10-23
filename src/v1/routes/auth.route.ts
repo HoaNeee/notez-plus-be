@@ -9,6 +9,12 @@ router.post("/login", authController.login);
 router.post("/register", authController.register);
 router.post("/verify-code", authController.verifyCode);
 router.post("/resend-code", authController.resendCode);
+
+router.get(
+  "/current-user",
+  authMiddleware.requireAuth,
+  authController.getCurrentUser
+);
 router.post("/logout", authMiddleware.requireAuth, authController.logout);
 
 const authRoute = router;

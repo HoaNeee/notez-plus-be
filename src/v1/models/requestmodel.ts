@@ -2,7 +2,7 @@
 
 import { DataTypes, Model, Sequelize } from "sequelize";
 
-export class FolderModel extends Model {
+export class RequestModel extends Model {
   /**
    * Helper method for defining associations.
    * This method is not a part of Sequelize lifecycle.
@@ -12,17 +12,15 @@ export class FolderModel extends Model {
     // define association here
   }
   public id!: number;
-  public user_id!: number;
-  public parent_id!: number;
-  public workspace_id!: number;
-  public title!: string;
-  public is_in_teamspace!: boolean;
+  public sender_id!: number;
+  public receiver_id!: number;
+  public request_type!: string;
+  public status!: "pending" | "accepted" | "rejected";
   public deleted!: boolean;
-  public deletedAt!: string;
 }
 
-export const FolderFactory = (sequelize: Sequelize) => {
-  FolderModel.init(
+export const RequestFactory = (sequelize: Sequelize) => {
+  RequestModel.init(
     {
       id: {
         type: DataTypes.INTEGER,
@@ -30,40 +28,33 @@ export const FolderFactory = (sequelize: Sequelize) => {
         autoIncrement: true,
         allowNull: false,
       },
-      user_id: {
+      sender_id: {
         type: DataTypes.INTEGER,
         references: { model: "users", key: "id" },
       },
-      parent_id: {
+      receiver_id: {
         type: DataTypes.INTEGER,
+        references: { model: "users", key: "id" },
       },
-      workspace_id: {
-        type: DataTypes.INTEGER,
-        references: { model: "workspaces", key: "id" },
+      request_type: {
+        type: DataTypes.STRING,
+        allowNull: false,
       },
-      title: {
-        type: DataTypes.STRING(255),
-      },
-      is_in_teamspace: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false,
+      status: {
+        type: DataTypes.ENUM("pending", "accepted", "rejected"),
+        defaultValue: "pending",
       },
       deleted: {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
       },
-      deletedAt: {
-        type: DataTypes.DATE,
-        defaultValue: null,
-      },
     },
     {
       sequelize,
-      modelName: "Folder",
-      tableName: "folders",
+      modelName: "RequestModel",
+      tableName: "requests",
     }
   );
-  return FolderModel;
-};
 
-// model/index.ts
+  return RequestModel;
+};
