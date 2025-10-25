@@ -7,14 +7,14 @@ import uploadRouter from "./upload.route";
 import workspaceRoute from "./workspace.route";
 
 const router = (app: Express) => {
-  const prefix = "/api";
-  app.use(prefix + "/auth", authRoute);
-  app.use(prefix + "/notes", noteRoute);
+	const prefix = "/api";
+	app.use(prefix + "/auth", authRoute);
+	app.use(prefix + "/notes", noteRoute);
 
-  // Protected routes
-  app.use(prefix + "/workspaces", authMiddleware.requireAuth, workspaceRoute);
-  app.use(prefix + "/folders", authMiddleware.requireAuth, folderRoute);
-  // app.use(prefix + "/upload", authMiddleware.isAccess, uploadRouter);
+	// Protected routes
+	app.use(prefix + "/workspaces", authMiddleware.requireAuth, workspaceRoute);
+	app.use(prefix + "/folders", authMiddleware.requireAuth, folderRoute);
+	// app.use(prefix + "/upload", authMiddleware.isAccess, uploadRouter);
 };
 
 export default router;
