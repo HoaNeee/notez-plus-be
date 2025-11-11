@@ -14,6 +14,8 @@ module.exports = {
 		 *
 		 */
 
+		const hassPass = `$2b$10$PormLGrYVDCvn8hPUP7pu.RnQgNtGsQBFWdJVMtlpZrUIYJFwbj8a`; // 123456
+
 		await queryInterface.bulkInsert(
 			"users",
 			[
@@ -21,7 +23,7 @@ module.exports = {
 					id: 1,
 					fullname: "nguyen hoa",
 					email: "hoa7cvodoi@gmail.com",
-					password: "123456",
+					password: hassPass,
 					provider: "account",
 					status: "active",
 					createdAt: new Date(),
@@ -31,7 +33,7 @@ module.exports = {
 					id: 2,
 					fullname: "le van c",
 					email: "levanc@gmail.com",
-					password: "123456",
+					password: hassPass,
 					provider: "account",
 					status: "active",
 					createdAt: new Date(),
@@ -41,7 +43,7 @@ module.exports = {
 					id: 3,
 					fullname: "nguyen hoa",
 					email: "hoa@gmail.com",
-					password: "123456",
+					password: hassPass,
 					provider: "account",
 					status: "active",
 					createdAt: new Date(),

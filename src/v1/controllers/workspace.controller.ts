@@ -1,17 +1,38 @@
 import { QueryTypes } from "sequelize";
 import { MyRequest } from "../middlewares/auth.middleware";
 import { Response } from "express";
-import { sequelize, User, Workspace, WorkspaceDetail } from "../models";
+import {
+	Note,
+	RequestModel,
+	RequestTarget,
+	sequelize,
+	User,
+	Workspace,
+	WorkspaceDetail,
+} from "../models";
 import ApiError from "../../../utils/api-error";
 import {
-  createWorkspaceForUser,
-  findExistMemberInWorkspace,
+	createRootFolderAndNoteDefaultForUser,
+	createWorkspaceForUser,
+	findExistMemberInWorkspace,
+	getRootFolderPrivateHelper,
 } from "./utils/utils";
+import { UserModel } from "../models/user";
+import { WorkspaceDetailModel } from "../models/workspacedetail";
+import { log_action } from "../../../utils/utils";
+import { RequestType } from "../models/requestmodel";
+import { RequestRefType } from "../models/requesttarget";
+import { WorkspaceModel } from "../models/workspace";
+
+enum RoleInWorkspace {
+	ADMIN = "admin",
+	MEMBER = "member",
+}
 
 export const getAllWorkspaces = async (req: MyRequest, res: Response) => {
-  const owner_id = req.user_id;
+	const owner_id = req.user_id;
 
-  const query = `
+	const query = `
     SELECT ws.*, wd.role, COUNT(wd2.id) AS member_count
     FROM workspace_details wd
     JOIN workspaces ws ON ws.id = wd.workspace_id
@@ -20,378 +41,566 @@ export const getAllWorkspaces = async (req: MyRequest, res: Response) => {
     GROUP BY wd.id, ws.id
     `;
 
-  const workspaces = await sequelize.query(
-    { query: query, values: [owner_id] },
-    { type: QueryTypes.SELECT }
-  );
+	const workspaces = (await sequelize.query(
+		{ query: query, values: [owner_id] },
+		{ type: QueryTypes.SELECT }
+	)) as (WorkspaceModel & { role: string; member_count: number })[];
 
-  const query2 = `
+	const w_ids = workspaces.map((w) => w.id);
+
+	const query2 = `
   SELECT ws.*, np.permission FROM note_permissions np
   JOIN notes nt ON nt.id = np.note_id
   JOIN folders f ON f.id = nt.folder_id
   JOIN workspaces ws ON ws.id = f.workspace_id
-  WHERE np.user_id = ?`;
+  WHERE np.user_id = :user_id AND ws.id NOT IN (:w_ids) AND nt.status = 'shared' AND nt.deleted = false`;
 
-  const workspaceBeInvited = await sequelize.query(
-    { query: query2, values: [owner_id] },
-    { type: QueryTypes.SELECT }
-  );
+	const workspacesBeInvited = await sequelize.query(query2, {
+		type: QueryTypes.SELECT,
+		replacements: {
+			user_id: owner_id,
+			w_ids: w_ids.length ? w_ids : [0],
+		},
+	});
 
-  res.status(200).json({
-    success: true,
-    status: 200,
-    message: "Get all workspaces success",
-    data: { workspaces: workspaces, workspaceBeInvited },
-  });
+	for (const w of workspacesBeInvited) {
+		w["is_guest"] = true;
+	}
+
+	res.status(200).json({
+		success: true,
+		status: 200,
+		message: "Get all workspaces success",
+		data: { workspaces: workspaces, workspacesBeInvited },
+	});
 };
 
 export const getDefaultWorkspace = async (req: MyRequest, res: Response) => {
-  const user_id = req.user_id;
+	const user_id = req.user_id;
 
-  const workspace = await Workspace.findOne({
-    where: {
-      owner_id: user_id,
-      deleted: false,
-    },
-  });
-  if (!workspace) {
-    throw new ApiError(404, "Default workspace not found");
-  }
+	const workspace = await Workspace.findOne({
+		where: {
+			owner_id: user_id,
+			deleted: false,
+		},
+	});
+	if (!workspace) {
+		throw new ApiError(404, "Default workspace not found");
+	}
 
-  res.status(200).json({
-    success: true,
-    status: 200,
-    message: "Get default workspace success",
-    data: workspace,
-  });
+	res.status(200).json({
+		success: true,
+		status: 200,
+		message: "Get default workspace success",
+		data: workspace,
+	});
 };
 
 export const createNewWorkspace = async (req: MyRequest, res: Response) => {
-  const owner_id = req.user_id;
+	const owner_id = req.user_id;
 
-  const body = req.body;
+	const body = req.body;
 
-  let defaultTitle = body.title;
+	let defaultTitle = body.title;
 
-  const workspace = await createWorkspaceForUser(owner_id, defaultTitle);
+	const workspace = await createWorkspaceForUser(owner_id, defaultTitle);
 
-  if (workspace instanceof ApiError) {
-    throw workspace;
-  }
+	if (workspace instanceof ApiError) {
+		throw workspace;
+	}
 
-  res.status(201).json({
-    success: true,
-    status: 201,
-    message: "Create new workspace success",
-    data: workspace,
-  });
+	res.status(201).json({
+		success: true,
+		status: 201,
+		message: "Create new workspace success",
+		data: workspace,
+	});
 };
 
 export const createDefaultWorkspace = async (req: MyRequest, res: Response) => {
-  const user_id = req.user_id;
-  const workspace = await createWorkspaceForUser(user_id);
+	const user_id = req.user_id;
+	const workspace = await createWorkspaceForUser(user_id);
 
-  if (workspace instanceof ApiError) {
-    throw workspace;
-  }
+	if (workspace instanceof ApiError) {
+		throw workspace;
+	}
 
-  res.status(201).json({
-    success: true,
-    status: 201,
-    message: "Create default workspace success",
-    data: workspace,
-  });
+	res.status(201).json({
+		success: true,
+		status: 201,
+		message: "Create default workspace success",
+		data: workspace,
+	});
 };
 
 export const updateWorkspace = async (req: MyRequest, res: Response) => {
-  const user_id = req.user_id;
-  const workspace_id = req.params.workspace_id;
-  const body = req.body;
+	const workspace_id = Number(req.params.workspace_id || 0);
+	const body = req.body;
+	const workspace_role = req.workspace_role;
 
-  const workspace = await findExistMemberInWorkspaceWithRole(
-    user_id,
-    parseInt(workspace_id),
-    "admin"
-  );
+	if (workspace_role !== RoleInWorkspace.ADMIN) {
+		throw new ApiError(
+			403,
+			"You do not have permission to update this workspace"
+		);
+	}
 
-  if (workspace instanceof ApiError) {
-    throw workspace;
-  }
+	const workspace = await findExistWorkspace(workspace_id);
 
-  await Workspace.update(
-    { ...body },
-    { where: { id: workspace_id }, returning: true }
-  );
+	if (workspace instanceof ApiError) {
+		throw workspace;
+	}
 
-  const updatedWorkspace = await Workspace.findByPk(workspace_id);
+	await Workspace.update(
+		{ ...body },
+		{ where: { id: workspace_id }, returning: true }
+	);
 
-  res.status(200).json({
-    success: true,
-    status: 200,
-    message: "Update workspace success",
-    data: updatedWorkspace,
-  });
+	const updatedWorkspace = await Workspace.findByPk(workspace_id);
+
+	res.status(200).json({
+		success: true,
+		status: 200,
+		message: "Update workspace success",
+		data: updatedWorkspace,
+	});
 };
 
-export const addNewMemberToWorkspace = async (
-  req: MyRequest,
-  res: Response
-) => {
-  const user_id = req.user_id;
-  const workspace_id = req.params.workspace_id;
-  const body = req.body;
-  const member_email = body.member_email;
+export const addMembersToWorkspace = async (req: MyRequest, res: Response) => {
+	const t = await sequelize.transaction();
 
-  const member = await User.findOne({
-    where: { email: member_email },
-    attributes: {
-      exclude: ["password"],
-      include: ["id", "email", "fullname", "avatar"],
-    },
-  });
-  if (!member) {
-    throw new ApiError(404, "Member not found");
-  }
+	try {
+		const user_id = req.user_id;
+		const workspace_id = Number(req.params.workspace_id || 0);
+		const body = req.body;
+		const emails = body.emails;
+		const role = body.role || "member";
+		const message = body.message || "";
 
-  const existMemberInWorkspace = await WorkspaceDetail.findOne({
-    where: {
-      workspace_id: Number(workspace_id),
-      member_id: member.id,
-    },
-  });
+		const workspace_role = req.workspace_role;
 
-  if (existMemberInWorkspace) {
-    throw new ApiError(409, "Member already exists in workspace");
-  }
+		if (workspace_role !== RoleInWorkspace.ADMIN) {
+			throw new ApiError(
+				403,
+				"You do not have permission to add members to this workspace"
+			);
+		}
 
-  const existWorkspace = await findExistMemberInWorkspaceWithRole(
-    user_id,
-    Number(workspace_id),
-    "admin"
-  );
+		const query = `
+		SELECT id, email, fullname, avatar FROM users WHERE email IN (:emails)
+	`;
 
-  if (existWorkspace instanceof ApiError) {
-    throw existWorkspace;
-  }
+		const member = await sequelize.query(query, {
+			replacements: { emails },
+			type: QueryTypes.SELECT,
+		});
 
-  //maybe need to send invitation email here
-  //maybe need to create default folders/notes for the new member here
-  const newWorkspaceDetail = await WorkspaceDetail.create({
-    workspace_id: Number(workspace_id),
-    member_id: member.id,
-    role: "admin", // Default role is admin when adding new member
-  });
+		if (!member || !member.length) {
+			throw new ApiError(404, "No members found with the provided emails");
+		}
 
-  res.status(200).json({
-    success: true,
-    status: 200,
-    message: "Add new member to workspace success",
-    data: { member: member, workspaceDetail: newWorkspaceDetail },
-  });
+		const mem_ids = member.map((m: UserModel) => m.id);
+
+		const existMemberInWorkspace = await sequelize.query(
+			`
+		SELECT * FROM workspace_details
+		WHERE workspace_id = :workspace_id AND member_id IN (:mem_ids)
+	`,
+			{
+				replacements: { workspace_id: workspace_id, mem_ids },
+				type: QueryTypes.SELECT,
+			}
+		);
+
+		const existMem_ids = existMemberInWorkspace.map(
+			(m: WorkspaceDetailModel) => m.member_id
+		);
+
+		const new_ids = mem_ids.filter((id) => !existMem_ids.includes(id));
+
+		const existWorkspace = await findExistWorkspace(workspace_id);
+
+		if (existWorkspace instanceof ApiError) {
+			throw existWorkspace;
+		}
+
+		//maybe need to send email,request first invitation here
+
+		await Promise.all(
+			new_ids.map((member_id) => {
+				const fn = async () => {
+					const request = await RequestModel.create(
+						{
+							sender_id: user_id,
+							receiver_id: member_id,
+							request_type: RequestType.INVITE,
+							status: "accepted",
+							workspace_id: workspace_id,
+						},
+						{ transaction: t }
+					);
+
+					if (request) {
+						await RequestTarget.create(
+							{
+								request_id: request.id,
+								ref_type: RequestRefType.WORKSPACE,
+								ref_id: workspace_id,
+								ref_extra: JSON.stringify({ role: role }),
+								message: message,
+							},
+							{ transaction: t }
+						);
+					}
+				};
+
+				return Promise.all([
+					fn(),
+					WorkspaceDetail.create(
+						{
+							workspace_id: workspace_id,
+							member_id,
+							role: role,
+							message,
+						},
+						{ transaction: t }
+					),
+					createRootFolderAndNoteDefaultForUser(member_id, workspace_id, t),
+				]);
+			})
+		);
+
+		await t.commit();
+
+		//dev
+		log_action(
+			`Send request to new members to workspace ${workspace_id}:`,
+			member.filter((m: UserModel) => new_ids.includes(m.id))
+		);
+
+		res.status(200).json({
+			success: true,
+			status: 200,
+			message: "Invite members to workspace success",
+		});
+	} catch (error) {
+		await t.rollback();
+		log_action("Error in addNewMembersToWorkspace:", error);
+		throw new ApiError(
+			error.statusCode || 500,
+			error.message || "Internal server error"
+		);
+	}
 };
 
 export const updateMemberInWorkspace = async (
-  req: MyRequest,
-  res: Response
+	req: MyRequest,
+	res: Response
 ) => {
-  const user_id = req.user_id;
-  const workspace_id = req.params.workspace_id;
-  const body = req.body;
-  const member_email = body.member_email;
+	const workspace_id = Number(req.params.workspace_id || 0);
+	const body = req.body;
+	const member_email = body.member_email;
 
-  const member = await User.findOne({
-    where: { email: member_email },
-    attributes: {
-      exclude: ["password"],
-      include: ["id", "email", "fullname", "avatar"],
-    },
-  });
-  if (!member) {
-    throw new ApiError(404, "Member not found");
-  }
+	const workspace_role = req.workspace_role;
 
-  const existMemberInWorkspace = await WorkspaceDetail.findOne({
-    where: {
-      workspace_id: Number(workspace_id),
-      member_id: member.id,
-    },
-  });
+	if (workspace_role !== RoleInWorkspace.ADMIN) {
+		throw new ApiError(
+			403,
+			"You do not have permission to update members in this workspace"
+		);
+	}
 
-  if (!existMemberInWorkspace) {
-    throw new ApiError(409, "Member does not exist in workspace");
-  }
+	const member = await User.findOne({
+		where: { email: member_email },
+		attributes: {
+			exclude: ["password"],
+			include: ["id", "email", "fullname", "avatar"],
+		},
+	});
+	if (!member) {
+		throw new ApiError(404, "Member not found");
+	}
 
-  const existWorkspace = await findExistMemberInWorkspaceWithRole(
-    user_id,
-    Number(workspace_id),
-    "admin"
-  );
+	const existWorkspace = await findExistWorkspace(workspace_id);
 
-  if (existWorkspace instanceof ApiError) {
-    throw existWorkspace;
-  }
+	if (existWorkspace instanceof ApiError) {
+		throw existWorkspace;
+	}
 
-  await WorkspaceDetail.update(
-    { ...body },
-    { where: { workspace_id: Number(workspace_id), member_id: member.id } }
-  );
+	await WorkspaceDetail.update(
+		{ ...body },
+		{ where: { workspace_id: workspace_id, member_id: member.id } }
+	);
 
-  res.status(200).json({
-    success: true,
-    status: 200,
-    message: "Update member in workspace success",
-    data: { member: member },
-  });
+	res.status(200).json({
+		success: true,
+		status: 200,
+		message: "Update member in workspace success",
+		data: { member: member },
+	});
 };
 
 export const removeMemberFromWorkspace = async (
-  req: MyRequest,
-  res: Response
+	req: MyRequest,
+	res: Response
 ) => {
-  const user_id = req.user_id;
-  const workspace_id = req.params.workspace_id;
-  const body = req.body;
-  const member_email = body.member_email;
+	const workspace_id = Number(req.params.workspace_id || 0);
+	const body = req.body;
+	const member_email = body.member_email;
 
-  const member = await User.findOne({
-    where: { email: member_email },
-    attributes: {
-      exclude: ["password"],
-      include: ["id", "email", "fullname", "avatar"],
-    },
-  });
-  if (!member) {
-    throw new ApiError(404, "Member not found");
-  }
+	const workspace_role = req.workspace_role;
 
-  const existMemberInWorkspace = await WorkspaceDetail.findOne({
-    where: {
-      workspace_id: Number(workspace_id),
-      member_id: member.id,
-    },
-  });
+	if (workspace_role !== RoleInWorkspace.ADMIN) {
+		throw new ApiError(
+			403,
+			"You do not have permission to remove members from this workspace"
+		);
+	}
 
-  if (!existMemberInWorkspace) {
-    throw new ApiError(409, "Member does not exist in workspace");
-  }
+	const member = await User.findOne({
+		where: { email: member_email },
+		attributes: {
+			exclude: ["password"],
+			include: ["id", "email", "fullname", "avatar"],
+		},
+	});
+	if (!member) {
+		throw new ApiError(404, "Member not found");
+	}
 
-  const existWorkspace = await findExistMemberInWorkspaceWithRole(
-    user_id,
-    Number(workspace_id),
-    "admin"
-  );
+	const existWorkspace = await findExistWorkspace(workspace_id);
+	if (existWorkspace instanceof ApiError) {
+		throw existWorkspace;
+	}
 
-  if (existWorkspace instanceof ApiError) {
-    throw existWorkspace;
-  }
+	//maybe need to check if the member is the last admin before removing
+	//maybe need to transfer ownership if the member is the owner
+	//maybe need remove all notes/folders of the member in this workspace
+	//maybe need to soft delete instead of hard delete
+	await WorkspaceDetail.destroy({
+		where: { workspace_id: Number(workspace_id), member_id: member.id },
+	});
 
-  //maybe need to check if the member is the last admin before removing
-  //maybe need to transfer ownership if the member is the owner
-  //maybe need remove all notes/folders of the member in this workspace
-  //maybe need to soft delete instead of hard delete
-  await WorkspaceDetail.destroy({
-    where: { workspace_id: Number(workspace_id), member_id: member.id },
-  });
-
-  res.status(200).json({
-    success: true,
-    status: 200,
-    message: "Remove member from workspace success",
-    data: { member: member },
-  });
+	res.status(200).json({
+		success: true,
+		status: 200,
+		message: "Remove member from workspace success",
+		data: { member: member },
+	});
 };
 
 export const getDetailWorkspace = async (req: MyRequest, res: Response) => {
-  const user_id = req.user_id;
-  const workspace_id = req.params.workspace_id;
+	const user_id = req.user_id;
+	const workspace_id = Number(req.params.workspace_id || 0);
+	const is_guest = Number(req.query.is_guest || 0) === 1;
 
-  const existWorkspace = await findExistMemberInWorkspaceWithRole(
-    user_id,
-    parseInt(workspace_id),
-    "member"
-  );
+	const workspace_role = req.workspace_role;
 
-  if (existWorkspace instanceof ApiError) {
-    throw existWorkspace;
-  }
+	if (is_guest) {
+		const workspace = await findExistWorkspace(Number(workspace_id || 0));
+		if (workspace instanceof ApiError) {
+			throw workspace;
+		}
 
-  const { workspace } = existWorkspace;
+		const query = `
+			SELECT n.* FROM notes n
+			JOIN folders f ON f.id = n.folder_id
+			JOIN workspaces w ON w.id = f.workspace_id
+			JOIN note_permissions np ON np.note_id = n.id
+			WHERE w.id = ? AND np.user_id = ? AND n.deleted = false AND n.status = 'shared'
+			ORDER BY n.updatedAt DESC
+		`;
 
-  res.status(200).json({
-    success: true,
-    status: 200,
-    message: "Get workspace detail success",
-    data: workspace,
-  });
+		const notesSharedInWorkspaceWithUser = await sequelize.query(
+			{
+				query: query,
+				values: [workspace.id, user_id],
+			},
+			{ type: QueryTypes.SELECT }
+		);
+
+		if (
+			!notesSharedInWorkspaceWithUser ||
+			!notesSharedInWorkspaceWithUser.length
+		) {
+			throw new ApiError(
+				403,
+				"You do not have permission to access this workspace"
+			);
+		}
+
+		res.status(200).json({
+			success: true,
+			status: 200,
+			message: "Get workspace detail success",
+			data: {
+				workspace: {
+					...workspace,
+					is_guest: true,
+				},
+				defaultNote: notesSharedInWorkspaceWithUser[0],
+			},
+		});
+		return;
+	}
+
+	if (workspace_role === RoleInWorkspace.MEMBER) {
+		throw new ApiError(
+			403,
+			"You do not have permission to access this workspace"
+		);
+	}
+
+	const existWorkspace = await getExistWorkspaceWithMemberAndRole(
+		user_id,
+		workspace_id
+	);
+
+	if (existWorkspace instanceof ApiError) {
+		throw existWorkspace;
+	}
+
+	const { workspace, member } = existWorkspace;
+
+	const rootFolderPrivateInWorkspace = await getRootFolderPrivateHelper(
+		user_id,
+		workspace.id
+	);
+
+	let defaultNote = null;
+
+	if (!(rootFolderPrivateInWorkspace instanceof ApiError)) {
+		const note = await Note.findOne({
+			where: {
+				folder_id: rootFolderPrivateInWorkspace.id,
+				deleted: false,
+				user_id,
+			},
+			order: [["updatedAt", "DESC"]],
+		});
+
+		if (note) {
+			defaultNote = note;
+		}
+	}
+
+	res.status(200).json({
+		success: true,
+		status: 200,
+		message: "Get workspace detail success",
+		data: {
+			workspace: {
+				...workspace,
+				role: member.role || "member",
+				is_guest: false,
+			},
+			defaultNote,
+		},
+	});
 };
 
 export const removeWorkspace = async (req: MyRequest, res: Response) => {
-  res.status(200).json({
-    success: true,
-    status: 200,
-    message: "Remove workspace success",
-    data: {},
-  });
+	res.status(200).json({
+		success: true,
+		status: 200,
+		message: "Remove workspace success",
+		data: {},
+	});
+};
+
+export const getMembersInWorkspace = async (req: MyRequest, res: Response) => {
+	const workspace_id = Number(req.params.workspace_id || 0);
+	const workspace_role = req.workspace_role;
+
+	if (workspace_role === RoleInWorkspace.MEMBER) {
+		throw new ApiError(
+			403,
+			"You do not have permission to access members in this workspace"
+		);
+	}
+
+	const exist = await findExistWorkspace(workspace_id);
+	if (exist instanceof ApiError) {
+		throw exist;
+	}
+
+	const query = `
+		SELECT u.id, u.email, u.fullname, u.avatar, wd.role
+		FROM users u
+		JOIN workspace_details wd ON wd.member_id = u.id
+		WHERE wd.workspace_id = :workspace_id
+	`;
+
+	const members = await sequelize.query(query, {
+		type: QueryTypes.SELECT,
+		replacements: { workspace_id },
+	});
+
+	res.status(200).json({
+		success: true,
+		status: 200,
+		message: "Get members in workspace success",
+		data: { members },
+	});
 };
 
 const findExistWorkspace = async (workspace_id: number) => {
-  try {
-    const workspace = await Workspace.findOne({
-      where: {
-        id: workspace_id,
-      },
-    });
+	try {
+		const [workspace, workspaceDetail] = await Promise.all([
+			Workspace.findOne({
+				where: {
+					id: workspace_id,
+				},
+			}),
+			WorkspaceDetail.findOne({
+				where: {
+					workspace_id: workspace_id,
+				},
+			}),
+		]);
 
-    if (!workspace) {
-      throw new ApiError(404, "Workspace not found");
-    }
+		if (!workspace) {
+			throw new ApiError(404, "Workspace not found");
+		}
 
-    return workspace;
-  } catch (error) {
-    if (error instanceof ApiError) {
-      return error;
-    }
-    return new ApiError(500, "Internal server error");
-  }
+		return {
+			...workspace,
+			role: workspaceDetail ? workspaceDetail.role : "member",
+		};
+	} catch (error) {
+		return new ApiError(
+			error.statusCode || 500,
+			error.message || "Internal server error"
+		);
+	}
 };
 
-const findExistMemberInWorkspaceWithRole = async (
-  user_id: number,
-  workspace_id: number,
-  role_target: "admin" | "member"
+const getExistWorkspaceWithMemberAndRole = async (
+	user_id: number,
+	workspace_id: number
 ) => {
-  try {
-    const workspace = await findExistWorkspace(workspace_id);
+	try {
+		if (!workspace_id) {
+			return new ApiError(400, "Workspace ID is required");
+		}
 
-    if (workspace instanceof ApiError) {
-      return workspace;
-    }
+		const workspace = await findExistWorkspace(workspace_id);
 
-    const workspaceDetail = await findExistMemberInWorkspace(
-      workspace_id,
-      user_id
-    );
+		if (workspace instanceof ApiError) {
+			return workspace;
+		}
 
-    if (workspaceDetail instanceof ApiError) {
-      return workspaceDetail;
-    }
+		const member = await findExistMemberInWorkspace(workspace_id, user_id);
 
-    if (workspaceDetail.role === "admin") {
-      return { workspace, workspaceDetail };
-    }
+		if (member instanceof ApiError) {
+			return member;
+		}
 
-    if (!workspaceDetail || workspaceDetail.role !== role_target) {
-      throw new ApiError(
-        403,
-        "You do not have permission to access this workspace"
-      );
-    }
-
-    return { workspace, workspaceDetail };
-  } catch (error) {
-    if (error instanceof ApiError) {
-      return new ApiError(error.statusCode, error.message);
-    }
-    return new ApiError(500, "Internal server error");
-  }
+		return { workspace, member };
+	} catch (error) {
+		if (error instanceof ApiError) {
+			return new ApiError(error.statusCode, error.message);
+		}
+		return new ApiError(500, "Internal server error");
+	}
 };

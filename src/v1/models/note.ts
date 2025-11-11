@@ -18,11 +18,10 @@ export class NoteModel extends Model {
 	public title!: string;
 	public slug!: string;
 	public content!: string;
-	public is_shared!: boolean; //shared when other user will be invited
 	public status_permission!: "view" | "edit" | "comment" | "none";
 	public deleted!: boolean;
 	public deletedAt!: string;
-	public status!: "private" | "public" | "workspace";
+	public status!: "private" | "public" | "workspace" | "shared"; //shared when other user will be invited
 }
 
 export const NoteFactory = (sequelize: Sequelize) => {
@@ -52,16 +51,12 @@ export const NoteFactory = (sequelize: Sequelize) => {
 				type: DataTypes.STRING(255),
 			},
 			status: {
-				type: DataTypes.ENUM("private", "public", "workspace"),
+				type: DataTypes.ENUM("private", "public", "workspace", "shared"),
 				defaultValue: "private",
 			},
 			status_permission: {
 				type: DataTypes.ENUM("view", "edit", "comment", "none"),
 				defaultValue: "none",
-			},
-			is_shared: {
-				type: DataTypes.BOOLEAN,
-				defaultValue: false,
 			},
 			deleted: {
 				type: DataTypes.BOOLEAN,

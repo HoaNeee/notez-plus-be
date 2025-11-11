@@ -12,12 +12,15 @@ module.exports = {
 		 *   isBetaMember: false
 		 * }], {});
 		 */
+
+		//root => parent_id: null
+
 		await queryInterface.bulkInsert(
 			"folders",
 			[
 				{
 					id: 1,
-					title: "New Folder",
+					title: "Root Folder",
 					user_id: 1,
 					parent_id: null,
 					workspace_id: 1,
@@ -57,7 +60,7 @@ module.exports = {
 				},
 				{
 					id: 5,
-					title: "Folder E",
+					title: "Root Folder E",
 					user_id: 2,
 					parent_id: null,
 					workspace_id: 3,
@@ -67,7 +70,7 @@ module.exports = {
 				},
 				{
 					id: 6,
-					title: "Folder F",
+					title: "Root Folder F",
 					user_id: 3,
 					parent_id: null,
 					workspace_id: 4,
@@ -87,7 +90,7 @@ module.exports = {
 				},
 				{
 					id: 8,
-					title: "New Folder in workspace",
+					title: "Root Folder in workspace",
 					user_id: 1,
 					parent_id: null,
 					workspace_id: 3,

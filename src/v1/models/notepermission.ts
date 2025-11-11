@@ -15,7 +15,7 @@ export class NotePermissionModel extends Model {
 	public user_id!: number;
 	public note_id!: number;
 	// public request_id!: number;
-	public permission!: "view" | "edit" | "admin";
+	public permission!: "view" | "edit" | "admin" | "comment";
 }
 
 export const NotePermissionFactory = (sequelize: Sequelize) => {
@@ -40,7 +40,7 @@ export const NotePermissionFactory = (sequelize: Sequelize) => {
 			//   references: { model: "requests", key: "id" },
 			// },
 			permission: {
-				type: DataTypes.ENUM("view", "edit", "admin"),
+				type: DataTypes.ENUM("view", "edit", "admin", "comment"),
 				defaultValue: "view",
 			},
 		},

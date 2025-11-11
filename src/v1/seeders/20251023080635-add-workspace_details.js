@@ -23,14 +23,14 @@ module.exports = {
 					createdAt: new Date(),
 					updatedAt: new Date(),
 				},
-				{
-					id: 2,
-					workspace_id: 2,
-					member_id: 1,
-					role: "admin",
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				},
+				// {
+				// 	id: 2,
+				// 	workspace_id: 2,
+				// 	member_id: 1,
+				// 	role: "admin",
+				// 	createdAt: new Date(),
+				// 	updatedAt: new Date(),
+				// },
 				{
 					id: 3,
 					workspace_id: 3,

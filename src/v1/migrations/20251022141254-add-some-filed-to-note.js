@@ -13,10 +13,6 @@ module.exports = {
 			type: Sequelize.ENUM("view", "edit", "comment", "none"),
 			defaultValue: "none",
 		});
-		await queryInterface.addColumn("notes", "is_shared", {
-			type: Sequelize.BOOLEAN,
-			defaultValue: false,
-		});
 	},
 
 	async down(queryInterface, Sequelize) {
@@ -27,6 +23,5 @@ module.exports = {
 		 * await queryInterface.dropTable('users');
 		 */
 		await queryInterface.removeColumn("notes", "status_permission");
-		await queryInterface.removeColumn("notes", "is_shared");
 	},
 };

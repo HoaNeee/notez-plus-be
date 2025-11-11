@@ -5,6 +5,7 @@ import ApiError from "../../../utils/api-error";
 
 export interface MyRequest extends Request {
 	user_id: number;
+	workspace_role?: "admin" | "member";
 }
 
 const user_id = 1;
@@ -15,17 +16,17 @@ export const isAccess = async (
 	next: NextFunction
 ) => {
 	try {
-		// req.user_id = 0;
+		req.user_id = 0;
 
-		// const exist = await decodedToken(req);
+		const exist = await decodedToken(req);
 
-		// if (exist instanceof ApiError) {
-		// 	throw exist;
-		// }
+		if (exist instanceof ApiError) {
+			throw exist;
+		}
 
-		// req.user_id = exist.id;
+		req.user_id = exist.id;
 
-		req.user_id = user_id;
+		// req.user_id = user_id;
 	} catch (error) {
 		if (!isProduction) {
 			console.log(error);
@@ -41,15 +42,15 @@ export const requireAuth = async (
 	next: NextFunction
 ) => {
 	try {
-		// const exist = await decodedToken(req);
+		const exist = await decodedToken(req);
 
-		// if (exist instanceof ApiError) {
-		//   throw exist;
-		// }
+		if (exist instanceof ApiError) {
+			throw exist;
+		}
 
-		// req.user_id = exist.id;
+		req.user_id = exist.id;
 
-		req.user_id = user_id;
+		// req.user_id = user_id;
 
 		next();
 	} catch (error) {

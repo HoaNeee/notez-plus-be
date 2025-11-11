@@ -10,7 +10,7 @@ module.exports = {
 				type: Sequelize.INTEGER,
 			},
 			permission: {
-				type: Sequelize.ENUM("view", "edit", "admin"),
+				type: Sequelize.ENUM("view", "edit", "admin", "comment"),
 				allowNull: false,
 				defaultValue: "view",
 			},

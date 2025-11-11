@@ -13,26 +13,16 @@ module.exports = {
 		 * }], {});
 		 */
 		await queryInterface.bulkInsert(
-			"workspaces",
+			"request_targets",
 			[
 				{
 					id: 1,
-					owner_id: 1,
-					title: "Personal Workspace",
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				},
-				{
-					id: 3,
-					owner_id: 2,
-					title: "Work Workspace 2",
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				},
-				{
-					id: 4,
-					owner_id: 3,
-					title: "Work Workspace 3",
+					request_id: 1,
+					ref_type: "note",
+					ref_id: 5,
+					ref_extra: JSON.stringify({ permission: "view" }),
+					ref_link: "/Note-E-5",
+					message: "Please review this note.",
 					createdAt: new Date(),
 					updatedAt: new Date(),
 				},
@@ -48,6 +38,6 @@ module.exports = {
 		 * Example:
 		 * await queryInterface.bulkDelete('People', null, {});
 		 */
-		await queryInterface.bulkDelete("workspaces", null, {});
+		await queryInterface.bulkDelete("request_targets", null, {});
 	},
 };

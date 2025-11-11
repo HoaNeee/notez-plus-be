@@ -4,7 +4,11 @@ import * as authMiddleware from "../middlewares/auth.middleware";
 
 const router = Router();
 
-router.get("/", authMiddleware.requireAuth, controller.getNotesPrivate);
+router.get(
+	"/",
+	authMiddleware.requireAuth,
+	controller.getNotesPrivateOrTeamspace
+);
 router.post("/create", authMiddleware.requireAuth, controller.createNewNote);
 router.patch(
 	"/update/:note_id",
@@ -17,13 +21,18 @@ router.delete(
 	controller.deleteNote
 );
 router.get("/default", authMiddleware.requireAuth, controller.getDefaultNote);
+router.get(
+	"/members/:note_id",
+	authMiddleware.requireAuth,
+	controller.getMembersInNote
+);
 
 // get by slug and maybe need status (public/private)
 router.get("/detail/:note_slug", authMiddleware.isAccess, controller.getDetail);
 
 //teamspace note
 router.get(
-	"/teamspace",
+	"/teamspaces",
 	authMiddleware.requireAuth,
 	controller.getNotesInTeamspace
 );

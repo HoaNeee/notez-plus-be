@@ -13,26 +13,16 @@ module.exports = {
 		 * }], {});
 		 */
 		await queryInterface.bulkInsert(
-			"workspaces",
+			"requests",
 			[
 				{
 					id: 1,
-					owner_id: 1,
-					title: "Personal Workspace",
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				},
-				{
-					id: 3,
-					owner_id: 2,
-					title: "Work Workspace 2",
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				},
-				{
-					id: 4,
-					owner_id: 3,
-					title: "Work Workspace 3",
+					sender_id: 3,
+					receiver_id: 1,
+					workspace_id: 4,
+					request_type: "invite",
+					status: "accepted",
+					is_read: true,
 					createdAt: new Date(),
 					updatedAt: new Date(),
 				},
@@ -48,6 +38,6 @@ module.exports = {
 		 * Example:
 		 * await queryInterface.bulkDelete('People', null, {});
 		 */
-		await queryInterface.bulkDelete("workspaces", null, {});
+		await queryInterface.bulkDelete("requests", null, {});
 	},
 };
