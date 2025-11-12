@@ -6,6 +6,9 @@ import ApiError from "../../../utils/api-error";
 export interface MyRequest extends Request {
 	user_id: number;
 	workspace_role?: "admin" | "member";
+	is_access_folder?: boolean;
+	is_access_folder_action: boolean;
+	note_permission?: "view" | "edit" | "comment" | "admin" | "none";
 }
 
 const user_id = 1;

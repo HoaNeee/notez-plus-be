@@ -10,8 +10,8 @@ import {
 import { MyRequest } from "../middlewares/auth.middleware";
 import {
 	checkIsAccessFolder,
-	checkIsAccessFolderAction,
 	findExistFolder,
+	findExistMemberInWorkspace,
 	findExistMemberInWorkspaceWithFolderId,
 	getRootFolderInTeamspace,
 } from "./utils/utils";
@@ -144,10 +144,18 @@ export const createNewNote = async (req: MyRequest, res: Response) => {
 		throw existFolder;
 	}
 
-	const isAccess = await checkIsAccessFolderAction(existFolder, user_id);
+	if (existFolder.is_in_teamspace) {
+		const memberInWorkspace = await findExistMemberInWorkspace(
+			existFolder.workspace_id,
+			user_id
+		);
 
-	if (isAccess instanceof ApiError) {
-		throw new ApiError(403, "You do not have permission to access");
+		if (
+			memberInWorkspace instanceof ApiError ||
+			memberInWorkspace.role !== "admin"
+		) {
+			throw memberInWorkspace;
+		}
 	}
 
 	const note = await Note.create({
@@ -173,25 +181,17 @@ export const updateNote = async (req: MyRequest, res: Response) => {
 	const user_id = req.user_id;
 	const body = req.body;
 
-	const note_id = Number(req.params.note_id);
+	const note_id = Number(req.params.note_id || 0);
+
+	const newPermission = req.note_permission || "none";
+
+	if (newPermission !== "edit" && newPermission !== "admin") {
+		throw new ApiError(403, "You do not have permission to access this note");
+	}
 
 	const existNote = await findExistNoteAndPermission(note_id, user_id);
 	if (existNote instanceof ApiError) {
 		throw existNote;
-	}
-
-	const { note, permission, role } = existNote;
-
-	const isAccess = await checkIsAccessNoteAction(
-		note,
-		permission,
-		role,
-		user_id,
-		"update"
-	);
-
-	if (isAccess instanceof ApiError) {
-		throw isAccess;
 	}
 
 	const title = body.title;
@@ -219,25 +219,21 @@ export const updateNote = async (req: MyRequest, res: Response) => {
 export const deleteNote = async (req: MyRequest, res: Response) => {
 	const user_id = req.user_id;
 
-	const note_id = Number(req.params.note_id);
+	const note_id = Number(req.params.note_id || 0);
+
+	const newPermission = req.note_permission || "none";
+
+	if (newPermission !== "edit" && newPermission !== "admin") {
+		throw new ApiError(403, "You do not have permission to access this note");
+	}
 
 	const existNote = await findExistNoteAndPermission(note_id, user_id);
 	if (existNote instanceof ApiError) {
 		throw existNote;
 	}
 
-	const { note, permission, role } = existNote;
-
-	const isAccess = await checkIsAccessNoteAction(
-		note,
-		permission,
-		role,
-		user_id,
-		"delete"
-	);
-
-	if (isAccess instanceof ApiError) {
-		throw isAccess;
+	if (existNote.note.status === "public") {
+		throw new ApiError(403, "You do not have permission to delete this note");
 	}
 
 	const isForever = req.query.isForever;
@@ -732,8 +728,6 @@ const findExistNoteAndPermission = async (id: number, user_id: number) => {
 			throw new ApiError(404, "Note not found");
 		}
 
-		console.log(exist);
-
 		if (exist.user_id === user_id) {
 			return { note: exist, permission: "admin", role: "admin" };
 		}
@@ -771,70 +765,6 @@ const findExistNoteAndPermission = async (id: number, user_id: number) => {
 		}
 
 		return { note: exist };
-	} catch (error) {
-		return new ApiError(
-			error.statusCode || 500,
-			error.message || "Internal server error"
-		);
-	}
-};
-
-const checkIsAccessNoteAction = async (
-	note: NoteModel,
-	permission: string,
-	role: string,
-	user_id: number,
-	action: "update" | "delete"
-) => {
-	try {
-		const errorAccess = new ApiError(
-			403,
-			"You do not have permission to access this note"
-		);
-
-		if (action === "delete") {
-			if (note.status === "public") {
-				throw errorAccess;
-			}
-		}
-
-		if (note.user_id === user_id) {
-			return true;
-		}
-
-		if (note.status === "public" && note.status_permission !== "edit") {
-			throw errorAccess;
-		} else if (note.status === "shared") {
-			if (permission !== "edit" && permission !== "admin") {
-				throw errorAccess;
-			}
-		} else if (note.status === "workspace") {
-			//MAYBE NEED FIX LATER
-			if (role !== "admin") {
-				throw errorAccess;
-			}
-		} //not owner and not is access on above -> in teamspace
-		else if (note.user_id !== user_id) {
-			const existFolder = await findExistFolder(note.folder_id, user_id);
-			if (existFolder instanceof ApiError) {
-				throw existFolder;
-			}
-			if (!existFolder.is_in_teamspace) {
-				throw new ApiError(
-					403,
-					"You do not have permission to access this note"
-				);
-			}
-
-			const isAccessFolder = await checkIsAccessFolderAction(
-				existFolder,
-				user_id
-			);
-
-			if (isAccessFolder instanceof ApiError) {
-				throw isAccessFolder;
-			}
-		}
 	} catch (error) {
 		return new ApiError(
 			error.statusCode || 500,

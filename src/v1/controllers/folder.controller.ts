@@ -6,8 +6,8 @@ import { QueryTypes } from "sequelize";
 import { FolderModel } from "../models/folder";
 import {
 	checkIsAccessFolder,
-	checkIsAccessFolderAction,
 	findExistFolder,
+	findExistMemberInWorkspace,
 	getRootFolderInTeamspace,
 } from "./utils/utils";
 import {
@@ -135,17 +135,16 @@ export const getFolderDetail = async (req: MyRequest, res: Response) => {
 	const user_id = req.user_id;
 
 	const folder_id = Number(req.params.folder_id || 0);
+	const is_access = req.is_access_folder;
+
+	if (!is_access) {
+		throw new ApiError(403, "Forbidden");
+	}
 
 	const folder = await findExistFolder(folder_id, user_id);
 
 	if (folder instanceof ApiError) {
 		throw folder;
-	}
-
-	const isAccessGet = await checkIsAccessFolder(folder, user_id);
-
-	if (isAccessGet instanceof ApiError) {
-		throw isAccessGet;
 	}
 
 	const childs = await findAllFolderWithParent(
@@ -181,13 +180,18 @@ export const createNewFolder = async (req: MyRequest, res: Response) => {
 		throw new ApiError(400, "Parent Folder was deleted");
 	}
 
-	if (!workspace_id) {
-		throw new ApiError(400, "workspace_id is required");
-	}
+	if (exist.is_in_teamspace) {
+		const memberInWorkspace = await findExistMemberInWorkspace(
+			exist.workspace_id,
+			user_id
+		);
 
-	const isAccess = await checkIsAccessFolderAction(exist, user_id);
-	if (isAccess instanceof ApiError) {
-		throw isAccess;
+		if (
+			memberInWorkspace instanceof ApiError ||
+			memberInWorkspace.role !== "admin"
+		) {
+			throw memberInWorkspace;
+		}
 	}
 
 	const folder = await Folder.create({
@@ -212,14 +216,16 @@ export const updateFolder = async (req: MyRequest, res: Response) => {
 	const body = req.body;
 	const parent_id = body.parent_id;
 
+	const is_access = req.is_access_folder_action;
+	const is_access_action = req.is_access_folder_action;
+
+	if (!is_access || !is_access_action) {
+		throw new ApiError(403, "Forbidden");
+	}
+
 	const exist = await findExistFolder(Number(folder_id), user_id);
 	if (exist instanceof ApiError) {
 		throw exist;
-	}
-
-	const isAccess = await checkIsAccessFolderAction(exist, user_id);
-	if (isAccess instanceof ApiError) {
-		throw isAccess;
 	}
 
 	if (parent_id !== exist.parent_id) {
@@ -267,6 +273,13 @@ export const deleteFolder = async (req: MyRequest, res: Response) => {
 	const folder_id = req.params.folder_id;
 	const user_id = req.user_id;
 	const isForever = req.query.isForever;
+
+	const is_access = req.is_access_folder_action;
+	const is_access_action = req.is_access_folder_action;
+
+	if (!is_access || !is_access_action) {
+		throw new ApiError(403, "Forbidden");
+	}
 
 	const exist = await findExistFolder(Number(folder_id), user_id);
 	if (exist instanceof ApiError) {
@@ -341,11 +354,6 @@ export const deleteFolder = async (req: MyRequest, res: Response) => {
 		const bind = await deleteChild(!!isForever, Number(folder_id));
 		if (bind instanceof Error) {
 			throw bind;
-		}
-
-		const isAccess = await checkIsAccessFolderAction(exist, user_id);
-		if (isAccess instanceof ApiError) {
-			throw isAccess;
 		}
 
 		t.commit();

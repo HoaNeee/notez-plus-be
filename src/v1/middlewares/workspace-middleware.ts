@@ -11,7 +11,10 @@ export const isAccessibleWorkspace = async (
 ) => {
 	try {
 		const workspace_id = Number(
-			req.params.workspace_id || req.body.workspace_id || 0
+			req.params.workspace_id ||
+				req.query.workspace_id ||
+				req.body.workspace_id ||
+				0
 		);
 
 		const user_id = req.user_id;
@@ -31,5 +34,8 @@ export const isAccessibleWorkspace = async (
 		next();
 	} catch (error) {
 		log_action(error);
+		res.status(error.statusCode || 500).json({
+			message: error.message || "Internal server error",
+		});
 	}
 };

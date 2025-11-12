@@ -229,23 +229,6 @@ export const findExistFolder = async (id: number, user_id: number) => {
 			throw new ApiError(404, "Folder not found");
 		}
 
-		// if (exist.is_in_teamspace) {
-		// 	const memberInWorkspace = await findExistMemberInWorkspace(
-		// 		exist.workspace_id,
-		// 		user_id
-		// 	);
-
-		// 	if (memberInWorkspace instanceof ApiError) {
-		// 		throw memberInWorkspace;
-		// 	}
-
-		// 	return exist;
-		// }
-
-		// if (exist.user_id !== user_id) {
-		// 	throw new ApiError(403, "Forbidden");
-		// }
-
 		return exist;
 	} catch (error) {
 		return new ApiError(

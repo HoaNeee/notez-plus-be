@@ -1,15 +1,28 @@
 import { Router } from "express";
 import * as controller from "../controllers/folder.controller";
+import * as folderMiddleware from "../middlewares/folder.middleware";
 
 const router = Router();
 
 router.get("/", controller.getFoldersPrivate);
 router.get("/root", controller.getRootFolder);
-router.get("/detail/:folder_id", controller.getFolderDetail);
+router.get(
+	"/detail/:folder_id",
+	folderMiddleware.isAccessibleFolder,
+	controller.getFolderDetail
+);
 
 router.post("/create/", controller.createNewFolder);
-router.patch("/update/:folder_id", controller.updateFolder);
-router.delete("/delete/:folder_id", controller.deleteFolder);
+router.patch(
+	"/update/:folder_id",
+	folderMiddleware.isAccessibleFolder,
+	controller.updateFolder
+);
+router.delete(
+	"/delete/:folder_id",
+	folderMiddleware.isAccessibleFolder,
+	controller.deleteFolder
+);
 router.post(
 	"/create-root-and-default-note",
 	controller.createRootFolderAndNotePrivateDefault

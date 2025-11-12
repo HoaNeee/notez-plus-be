@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as controller from "../controllers/note.controller";
 import * as authMiddleware from "../middlewares/auth.middleware";
+import * as noteMiddleware from "../middlewares/note-middleware";
 
 const router = Router();
 
@@ -13,17 +14,20 @@ router.post("/create", authMiddleware.requireAuth, controller.createNewNote);
 router.patch(
 	"/update/:note_id",
 	authMiddleware.requireAuth,
+	noteMiddleware.isAccessNote,
 	controller.updateNote
 );
 router.delete(
 	"/delete/:note_id",
 	authMiddleware.requireAuth,
+	noteMiddleware.isAccessNote,
 	controller.deleteNote
 );
 router.get("/default", authMiddleware.requireAuth, controller.getDefaultNote);
 router.get(
 	"/members/:note_id",
 	authMiddleware.requireAuth,
+	noteMiddleware.isAccessNote,
 	controller.getMembersInNote
 );
 
