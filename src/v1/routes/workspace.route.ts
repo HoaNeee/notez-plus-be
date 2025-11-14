@@ -9,39 +9,39 @@ router.get("/default", controller.getDefaultWorkspace);
 router.post("/create-new", controller.createNewWorkspace);
 router.post("/create-default", controller.createDefaultWorkspace);
 router.get(
-	"/detail/:workspace_id",
-	workspaceMiddleware.isAccessibleWorkspace,
-	controller.getDetailWorkspace
+  "/detail/:workspace_id",
+  workspaceMiddleware.isAccessibleWorkspace,
+  controller.getDetailWorkspace
 );
 router.get(
-	"/members/:workspace_id",
-	workspaceMiddleware.isAccessibleWorkspace,
-	controller.getMembersInWorkspace
+  "/members/:workspace_id",
+  workspaceMiddleware.isAccessibleWorkspace,
+  controller.getMembersInWorkspace
 );
 router.post(
-	"/add-members/:workspace_id",
-	workspaceMiddleware.isAccessibleWorkspace,
-	controller.addMembersToWorkspace
+  "/members/add/:workspace_id",
+  workspaceMiddleware.isAccessibleWorkspace,
+  controller.addMembersToWorkspace
 );
 router.patch(
-	"/update-member/:workspace_id",
-	workspaceMiddleware.isAccessibleWorkspace,
-	controller.updateMemberInWorkspace
+  "/members/update/:workspace_id",
+  workspaceMiddleware.isAccessibleWorkspace,
+  controller.updateMemberInWorkspace
 );
 router.delete(
-	"/remove-member/:workspace_id",
-	workspaceMiddleware.isAccessibleWorkspace,
-	controller.removeMemberFromWorkspace
+  "/members/remove/:workspace_id",
+  workspaceMiddleware.isAccessibleWorkspace,
+  controller.removeMemberFromWorkspace
 );
 router.patch(
-	"/update/:workspace_id",
-	workspaceMiddleware.isAccessibleWorkspace,
-	controller.updateWorkspace
+  "/update/:workspace_id",
+  workspaceMiddleware.isAccessibleWorkspace,
+  controller.updateWorkspace
 );
 router.delete(
-	"/remove/:workspace_id",
-	workspaceMiddleware.isAccessibleWorkspace,
-	controller.removeWorkspace
+  "/remove/:workspace_id",
+  workspaceMiddleware.isAccessibleWorkspace,
+  controller.removeWorkspace
 );
 const workspaceRoute = router;
 export default workspaceRoute;

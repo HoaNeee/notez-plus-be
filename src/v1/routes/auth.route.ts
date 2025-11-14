@@ -15,6 +15,12 @@ router.get(
   authMiddleware.requireAuth,
   authController.getCurrentUser
 );
+
+router.get(
+  "/public-user",
+  authMiddleware.requireAuth,
+  authController.getPublicUser
+);
 router.post("/logout", authMiddleware.requireAuth, authController.logout);
 
 const authRoute = router;
