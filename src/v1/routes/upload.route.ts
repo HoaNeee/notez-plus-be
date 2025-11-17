@@ -7,7 +7,7 @@ import * as controller from "../controllers/upload.controller";
 
 const router = Router();
 
-router.post("/", upload.single("thumbnail"), controller.upload);
+router.post("/", upload.single("image"), controller.upload);
 router.post("/multi", upload.array("images"), controller.uploads);
 
 const uploadRouter = router;

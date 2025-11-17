@@ -22,7 +22,7 @@ module.exports = {
 					workspace_id: 4,
 					request_type: "invite",
 					status: "accepted",
-					is_read: true,
+					user_reads: JSON.stringify([]),
 					createdAt: new Date(),
 					updatedAt: new Date(),
 				},

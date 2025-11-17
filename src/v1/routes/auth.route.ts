@@ -10,16 +10,22 @@ router.post("/register", authController.register);
 router.post("/verify-code", authController.verifyCode);
 router.post("/resend-code", authController.resendCode);
 
-router.get(
-  "/current-user",
-  authMiddleware.requireAuth,
-  authController.getCurrentUser
+router.patch(
+	"/update-profile",
+	authMiddleware.requireAuth,
+	authController.updateProfile
 );
 
 router.get(
-  "/public-user",
-  authMiddleware.requireAuth,
-  authController.getPublicUser
+	"/current-user",
+	authMiddleware.requireAuth,
+	authController.getCurrentUser
+);
+
+router.get(
+	"/public-user",
+	authMiddleware.requireAuth,
+	authController.getPublicUser
 );
 router.post("/logout", authMiddleware.requireAuth, authController.logout);
 

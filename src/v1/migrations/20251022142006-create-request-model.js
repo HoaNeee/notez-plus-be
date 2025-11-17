@@ -31,9 +31,10 @@ module.exports = {
 				type: Sequelize.ENUM("pending", "accepted", "rejected"),
 				defaultValue: "pending",
 			},
-			is_read: {
-				type: Sequelize.BOOLEAN,
-				defaultValue: false,
+			user_reads: {
+				// store array of user IDs who have read the request
+				type: Sequelize.TEXT("long"),
+				defaultValue: JSON.stringify([]),
 			},
 			deleted: {
 				type: Sequelize.BOOLEAN,

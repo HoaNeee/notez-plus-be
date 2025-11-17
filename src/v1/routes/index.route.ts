@@ -6,6 +6,8 @@ import * as authMiddleware from "../middlewares/auth.middleware";
 import uploadRouter from "./upload.route";
 import workspaceRoute from "./workspace.route";
 import requestRoute from "./request.route";
+import settingRoute from "./setting.route";
+import trashRoute from "./trash.route";
 
 const router = (app: Express) => {
 	const prefix = "/api";
@@ -16,7 +18,9 @@ const router = (app: Express) => {
 	app.use(prefix + "/workspaces", authMiddleware.requireAuth, workspaceRoute);
 	app.use(prefix + "/folders", authMiddleware.requireAuth, folderRoute);
 	app.use(prefix + "/requests", authMiddleware.requireAuth, requestRoute);
-	// app.use(prefix + "/upload", authMiddleware.isAccess, uploadRouter);
+	app.use(prefix + "/settings", authMiddleware.requireAuth, settingRoute);
+	app.use(prefix + "/trash", authMiddleware.requireAuth, trashRoute);
+	app.use(prefix + "/upload", authMiddleware.isAccess, uploadRouter);
 };
 
 export default router;
