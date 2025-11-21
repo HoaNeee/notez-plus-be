@@ -7,32 +7,32 @@ const router = Router();
 router.get("/", controller.getFoldersPrivate);
 router.get("/root", controller.getRootFolder);
 router.get(
-	"/detail/:folder_id",
-	folderMiddleware.isAccessibleFolder,
-	controller.getFolderDetail
+  "/detail/:folder_id",
+  folderMiddleware.isAccessibleFolder,
+  controller.getFolderDetail
 );
 
 router.post("/create/", controller.createNewFolder);
 router.patch(
-	"/update/:folder_id",
-	folderMiddleware.isAccessibleFolder,
-	controller.updateFolder
+  "/update/:folder_id",
+  folderMiddleware.isAccessibleFolder,
+  controller.updateFolder
 );
 router.delete(
-	"/delete/:folder_id",
-	folderMiddleware.isAccessibleFolder,
-	controller.deleteFolder
+  "/move-to-trash/:folder_id",
+  folderMiddleware.isAccessibleFolder,
+  controller.deleteFolder
 );
 router.post(
-	"/create-root-and-default-note",
-	controller.createRootFolderAndNotePrivateDefault
+  "/create-root-and-default-note",
+  controller.createRootFolderAndNotePrivateDefault
 );
 
 // Teamspace folders
 router.get("/teamspaces", controller.getFoldersInTeamspace);
 router.post(
-	"/create-root-and-default-note-teamspace",
-	controller.createRootFolderAndNoteInTeamspaceDefault
+  "/create-root-and-default-note-teamspace",
+  controller.createRootFolderAndNoteInTeamspaceDefault
 );
 
 const folderRoute = router;

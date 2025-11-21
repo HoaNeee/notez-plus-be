@@ -2,6 +2,7 @@ import { Router } from "express";
 import * as controller from "../controllers/note.controller";
 import * as authMiddleware from "../middlewares/auth.middleware";
 import * as noteMiddleware from "../middlewares/note-middleware";
+import * as workspaceMiddleware from "../middlewares/workspace-middleware";
 
 const router = Router();
 
@@ -18,7 +19,7 @@ router.patch(
   controller.updateNote
 );
 router.delete(
-  "/delete/:note_id",
+  "/move-to-trash/:note_id",
   authMiddleware.requireAuth,
   noteMiddleware.isAccessNote,
   controller.deleteNote
@@ -49,6 +50,23 @@ router.patch(
   noteMiddleware.isAccessNote,
   controller.updateMemberInNote
 );
+
+//favorite
+router.get(
+  "/favorites/:workspace_id",
+  authMiddleware.requireAuth,
+  workspaceMiddleware.isAccessibleWorkspace,
+  controller.getFavoriteNotes
+);
+
+router.patch(
+  "/favorites/update/:action/:note_id",
+  authMiddleware.requireAuth,
+  workspaceMiddleware.isAccessibleWorkspace,
+  noteMiddleware.isAccessNote,
+  controller.favoriteNoteAction
+);
+// end favorite
 
 // get by slug and maybe need status (public/private)
 router.get("/detail/:note_slug", authMiddleware.isAccess, controller.getDetail);
