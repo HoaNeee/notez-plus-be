@@ -8,6 +8,7 @@ import workspaceRoute from "./workspace.route";
 import requestRoute from "./request.route";
 import settingRoute from "./setting.route";
 import trashRoute from "./trash.route";
+import searchRoute from "./search.route";
 
 const router = (app: Express) => {
 	const prefix = "/api";
@@ -20,6 +21,7 @@ const router = (app: Express) => {
 	app.use(prefix + "/requests", authMiddleware.requireAuth, requestRoute);
 	app.use(prefix + "/settings", authMiddleware.requireAuth, settingRoute);
 	app.use(prefix + "/trash", authMiddleware.requireAuth, trashRoute);
+	app.use(prefix + "/search", authMiddleware.requireAuth, searchRoute);
 	app.use(prefix + "/upload", authMiddleware.isAccess, uploadRouter);
 };
 
