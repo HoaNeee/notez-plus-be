@@ -215,7 +215,7 @@ export const getRootFolderInTeamspace = async (
   }
 };
 
-export const findExistFolder = async (id: number, user_id: number) => {
+export const findExistFolder = async (id: number, user_id?: number) => {
   try {
     if (!id) {
       throw new ApiError(400, "Folder ID is required");

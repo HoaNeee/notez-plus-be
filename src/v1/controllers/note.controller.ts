@@ -460,6 +460,20 @@ export const getDetail = async (req: MyRequest, res: Response) => {
   let last_updated_by = null;
   let created_by = null;
 
+  const not_accect_response = {
+    success: true,
+    status: 200,
+    message: "Note is private, please send request to owner for access",
+    data: {
+      is_need_request_access: true,
+      is_need_login: false,
+      note: null,
+      workspace: workspace,
+      folder: null,
+      current_user_id: user_id,
+    },
+  };
+
   if (existNote.deleted) {
     const log = await getNoteLog(existNote.id, NoteLogRefAction.DELETE);
 
@@ -497,14 +511,30 @@ export const getDetail = async (req: MyRequest, res: Response) => {
       }
 
       if (existNote.status !== "public") {
-        throw new ApiError(403);
+        res.status(200).json({
+          success: true,
+          status: 200,
+          message: "Note is private, please login to access",
+          data: {
+            is_need_login: true,
+            note: null,
+            workspace: null,
+            folder: null,
+          },
+        });
+        return;
       }
 
       res.status(200).json({
         success: true,
         status: 200,
         message: "Get note detail success",
-        data: { note: existNote, workspace, folder: null },
+        data: {
+          note: existNote,
+          workspace,
+          folder: null,
+          current_user_id: user_id,
+        },
       });
       return;
     }
@@ -539,7 +569,8 @@ export const getDetail = async (req: MyRequest, res: Response) => {
         permission = newPermission;
         differentNotesPublished = newDifferentNotesPublished;
       } else {
-        throw new ApiError(403);
+        res.status(200).json(not_accect_response);
+        return;
       }
     } else {
       if (existNote.deleted && !folder.is_in_teamspace) {
@@ -558,7 +589,8 @@ export const getDetail = async (req: MyRequest, res: Response) => {
         role = existMember.role;
         is_guest = false;
       } else if (existNote.status === "private") {
-        throw new ApiError(403);
+        res.status(200).json(not_accect_response);
+        return;
       } else {
         is_guest = true;
         //status is public or shared or workspace
@@ -567,6 +599,10 @@ export const getDetail = async (req: MyRequest, res: Response) => {
         } else {
           const result = await handlePermissionForNote();
           if (result instanceof ApiError) {
+            if (result.statusCode === 403) {
+              res.status(200).json(not_accect_response);
+              return;
+            }
             throw result;
           }
           const {
@@ -596,14 +632,15 @@ export const getDetail = async (req: MyRequest, res: Response) => {
         },
         folder: {
           folder: folder,
-          foldersBreadcrumb: folders,
+          folders_breadcrumb: folders,
         },
         workspace: {
           ...workspace,
           is_guest,
           role,
         },
-        differentNotesPublished,
+        different_notes_published: differentNotesPublished,
+        current_user_id: user_id,
       },
     });
 
@@ -639,10 +676,11 @@ export const getDetail = async (req: MyRequest, res: Response) => {
       },
       folder: {
         folder: folder,
-        foldersBreadcrumb: folderBreadcrumbs,
+        folders_breadcrumb: folderBreadcrumbs,
       },
       workspace,
-      differentNotesPublished: [],
+      different_notes_published: [],
+      current_user_id: user_id,
     },
   });
 };
