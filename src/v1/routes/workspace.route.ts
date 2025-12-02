@@ -8,6 +8,7 @@ router.get("/", controller.getAllWorkspaces);
 router.get("/default", controller.getDefaultWorkspace);
 router.post("/create-new", controller.createNewWorkspace);
 router.post("/create-default", controller.createDefaultWorkspace);
+router.get("/last-workspace", controller.getLastWorkspace);
 router.get(
 	"/setting/:workspace_id",
 	workspaceMiddleware.isAccessibleWorkspace,
@@ -18,6 +19,7 @@ router.get(
 	workspaceMiddleware.isAccessibleWorkspace,
 	controller.getDetailWorkspace
 );
+
 router.get(
 	"/members/:workspace_id",
 	workspaceMiddleware.isAccessibleWorkspace,

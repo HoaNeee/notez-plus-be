@@ -2,6 +2,8 @@
 
 import { DataTypes, Model, Sequelize } from "sequelize";
 
+export type NotePermissionType = "view" | "edit" | "admin" | "comment";
+
 export class NotePermissionModel extends Model {
 	/**
 	 * Helper method for defining associations.
@@ -15,7 +17,7 @@ export class NotePermissionModel extends Model {
 	public user_id!: number;
 	public note_id!: number;
 	// public request_id!: number;
-	public permission!: "view" | "edit" | "admin" | "comment";
+	public permission!: NotePermissionType;
 }
 
 export const NotePermissionFactory = (sequelize: Sequelize) => {

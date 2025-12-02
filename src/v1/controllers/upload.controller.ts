@@ -15,7 +15,10 @@ export const upload = async (req: Request, res: Response) => {
 		res.status(200).json({
 			code: 200,
 			message: "Upload image successfully",
-			data: result.secure_url,
+			data: {
+				url: result.secure_url,
+				public_id: result.public_id,
+			},
 			success: true,
 		});
 	} catch (error) {

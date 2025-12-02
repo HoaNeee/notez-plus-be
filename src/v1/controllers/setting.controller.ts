@@ -9,6 +9,7 @@ export const getSettingOfUser = async (req: MyRequest, res: Response) => {
 	const setting = await Setting.findOne({ where: { user_id } });
 
 	if (!setting) {
+		//handle create default setting later
 		throw new ApiError(404, "Setting of user not found");
 	}
 

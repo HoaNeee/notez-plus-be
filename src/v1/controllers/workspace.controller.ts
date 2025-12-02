@@ -17,6 +17,7 @@ import {
 	createRootFolderAndNoteDefaultForUser,
 	createWorkspaceForUser,
 	findExistMemberInWorkspace,
+	getLastNote,
 	getRootFolderPrivateHelper,
 } from "./utils/utils";
 import { UserModel } from "../models/user";
@@ -685,6 +686,44 @@ export const updateWorkspaceSetting = async (req: MyRequest, res: Response) => {
 		success: true,
 		status: 200,
 		message: "Update workspace setting success",
+	});
+};
+
+export const getLastWorkspace = async (req: MyRequest, res: Response) => {
+	const user_id = req.user_id;
+
+	const note = await getLastNote(user_id);
+
+	const workspaces = await sequelize.query(
+		`
+		SELECT w.* FROM workspaces w
+		JOIN folders f ON f.workspace_id = w.id
+		WHERE f.id = :folder_id
+		LIMIT 1
+		`,
+		{
+			replacements: { folder_id: note?.folder_id ?? 0 },
+			type: QueryTypes.SELECT,
+		}
+	);
+
+	let is_guest = true,
+		role = "member";
+
+	if (workspaces.length) {
+		const ws = workspaces[0] as WorkspaceModel;
+		const member = await findExistMemberInWorkspace(ws.id, user_id);
+		if (member && !(member instanceof ApiError)) {
+			is_guest = false;
+			role = member.role || "member";
+		}
+	}
+
+	res.status(200).json({
+		success: true,
+		status: 200,
+		message: "Get last workspace success",
+		data: { workspace: workspaces[0] || null },
 	});
 };
 

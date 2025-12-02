@@ -1,5 +1,11 @@
 import { Request, Response } from "express";
-import { User } from "../models";
+import {
+	EditorSetting,
+	NotificationSetting,
+	sequelize,
+	Setting,
+	User,
+} from "../models";
 import ApiError from "../../../utils/api-error";
 import {
 	hashPasswordUsingBcrypt,
@@ -7,7 +13,6 @@ import {
 	signJWT,
 	verifyPassword,
 } from "../../../utils/utils";
-import { createRootFolderAndNoteDefaultForUser } from "./utils/utils";
 import { MyRequest } from "../middlewares/auth.middleware";
 
 const setCookie = (res: Response, token: string) => {
@@ -54,42 +59,79 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const register = async (req: Request, res: Response) => {
-	const body = req.body;
+	const t = await sequelize.transaction();
+	try {
+		const body = req.body;
 
-	const password = body.password as string;
-	const email = body.email as string;
+		const password = body.password as string;
+		const email = body.email as string;
 
-	const exist = await User.findOne({ where: { email, status: "active" } });
+		const exist = await User.findOne({ where: { email, status: "active" } });
 
-	if (exist) {
-		throw new ApiError(400, "Email already exists");
+		if (exist) {
+			throw new ApiError(400, "Email already exists");
+		}
+
+		const { hashPass } = await hashPasswordUsingBcrypt(password);
+
+		const fullname = email.split("@")[0];
+
+		const user = await User.create(
+			{
+				email,
+				password: hashPass,
+				fullname,
+				status: "active",
+			},
+			{ transaction: t }
+		);
+
+		const setting = await Setting.create(
+			{
+				user_id: user.id,
+			},
+			{ transaction: t }
+		);
+		await Promise.all([
+			EditorSetting.create(
+				{
+					setting_id: setting.id,
+				},
+				{ transaction: t }
+			),
+			NotificationSetting.create(
+				{
+					setting_id: setting.id,
+				},
+				{ transaction: t }
+			),
+		]);
+
+		const data = user.dataValues;
+		delete data.password;
+
+		const token = signJWT(
+			{
+				id: data.id,
+				email: data.email,
+			},
+			7 * 24 * 60 * 60
+		);
+
+		setCookie(res, token);
+
+		await t.commit();
+
+		res
+			.status(200)
+			.json({ success: true, message: "Register successful", data });
+	} catch (error) {
+		await t.rollback();
+		throw new ApiError(
+			error.statusCode || 500,
+			error.message || "Internal server error"
+		);
 	}
-
-	const { hashPass } = await hashPasswordUsingBcrypt(password);
-
-	const fullname = email.split("@")[0];
-
-	const user = await User.create({
-		email,
-		password: hashPass,
-		fullname,
-		status: "active",
-	});
-
-	const data = user.dataValues;
-	delete data.password;
-
-	const token = signJWT(
-		{
-			id: data.id,
-			email: data.email,
-		},
-		7 * 24 * 60 * 60
-	);
-
-	setCookie(res, token);
-
-	res.status(200).json({ success: true, message: "Register successful", data });
 };
 
 export const checkEmailExist = async (req: Request, res: Response) => {
@@ -142,13 +184,14 @@ export const logout = async (req: Request, res: Response) => {
 export const getCurrentUser = async (req: MyRequest, res: Response) => {
 	const user_id = req.user_id;
 
-	const user = await User.findOne({ where: { id: user_id, status: "active" } });
+	const user = await User.findOne({
+		where: { id: user_id, status: "active" },
+		attributes: { exclude: ["password"] },
+	});
 
 	if (!user) {
 		throw new ApiError(404, "User not found");
 	}
-
-	delete user.password;
 
 	res
 		.status(200)
@@ -161,8 +204,6 @@ export const getPublicUser = async (req: MyRequest, res: Response) => {
 	if (!email) {
 		throw new ApiError(400, "Email is required");
 	}
-
-	console.log(email);
 
 	const user = await User.findOne({
 		where: { email, status: "active" },
