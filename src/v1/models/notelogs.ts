@@ -5,6 +5,7 @@ import { DataTypes, Model, Sequelize } from "sequelize";
 export enum NoteLogRefAction {
 	CREATE = "create",
 	UPDATE = "update",
+	EDIT_CONTENT = "edit_content",
 	DELETE = "delete",
 	RESTORE = "restore",
 	VIEW = "view",

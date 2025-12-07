@@ -17,19 +17,21 @@ import { NotePermissionFactory } from "./notepermission";
 import { WorkspaceSettingFactory } from "./workspacesetting";
 import { NoteLogsFactory } from "./notelogs";
 import { FavoriteNoteFactory } from "./favoritenote";
+import { NoteThreadFactory } from "./notethread";
+import { NoteCommentFactory } from "./notecomment";
 const env = process.env.NODE_ENV || "development";
 
 export const sequelize = new Sequelize({
-  host: config[env].host,
-  database: config[env].database,
-  username: config[env].username,
-  dialect: config[env].dialect,
-  password: process.env.DB_PASSWORD || config[env].password || "",
-  port: Number(config[env].port) || 3306,
-  query: {
-    raw: true,
-    logging: false,
-  },
+	host: config[env].host,
+	database: config[env].database,
+	username: config[env].username,
+	dialect: config[env].dialect,
+	password: process.env.DB_PASSWORD || config[env].password || "",
+	port: Number(config[env].port) || 3306,
+	query: {
+		raw: true,
+		logging: false,
+	},
 });
 
 const User = UserFactory(sequelize);
@@ -46,20 +48,24 @@ const NotePermission = NotePermissionFactory(sequelize);
 const WorkspaceSetting = WorkspaceSettingFactory(sequelize);
 const NoteLog = NoteLogsFactory(sequelize);
 const FavoriteNote = FavoriteNoteFactory(sequelize);
+const NoteThread = NoteThreadFactory(sequelize);
+const NoteComment = NoteCommentFactory(sequelize);
 
 export {
-  User,
-  Folder,
-  Note,
-  Setting,
-  EditorSetting,
-  NotificationSetting,
-  Workspace,
-  WorkspaceDetail,
-  RequestModel,
-  RequestTarget,
-  NotePermission,
-  WorkspaceSetting,
-  NoteLog,
-  FavoriteNote,
+	User,
+	Folder,
+	Note,
+	Setting,
+	EditorSetting,
+	NotificationSetting,
+	Workspace,
+	WorkspaceDetail,
+	RequestModel,
+	RequestTarget,
+	NotePermission,
+	WorkspaceSetting,
+	NoteLog,
+	FavoriteNote,
+	NoteThread,
+	NoteComment,
 };

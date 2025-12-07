@@ -23,6 +23,12 @@ router.patch(
 	noteMiddleware.isAccessNote,
 	controller.updateNote
 );
+router.patch(
+	"/update-content/:note_id",
+	authMiddleware.isAccess,
+	noteMiddleware.isAccessNote,
+	controller.updateNoteContent
+);
 router.delete(
 	"/move-to-trash/:note_id",
 	authMiddleware.requireAuth,
@@ -73,8 +79,37 @@ router.patch(
 );
 // end favorite
 
+router.post(
+	`/:note_id/threads/create`,
+	authMiddleware.isAccess,
+	noteMiddleware.isAccessNote,
+	controller.createNewThread
+);
+router.post(
+	`/:note_id/comments/create`,
+	authMiddleware.isAccess,
+	noteMiddleware.isAccessNote,
+	controller.createComment
+);
+router.delete(
+	`/:note_id/comments/delete/:comment_id`,
+	authMiddleware.isAccess,
+	noteMiddleware.isAccessNote,
+	controller.deleteComment
+);
+router.delete(
+	`/:note_id/threads/delete/:thread_id`,
+	authMiddleware.isAccess,
+	noteMiddleware.isAccessNote,
+	controller.deleteThread
+);
+
 // get by slug and maybe need status (public/private)
-router.get("/detail/:note_slug", authMiddleware.isAccess, controller.getDetail);
+router.get(
+	"/detail/:note_slug",
+	authMiddleware.isAccess,
+	controller.getDetailNote
+);
 
 //teamspace note
 router.get(
